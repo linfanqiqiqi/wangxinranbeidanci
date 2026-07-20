@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>猪猪然宝宝的听写软件</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);min-height:100vh;color:#fff;display:flex;justify-content:center;align-items:center;padding:20px}
+.container{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:40px;width:100%;max-width:620px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+h1{text-align:center;font-size:28px;font-weight:700;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:5px}
+.subtitle{text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:25px;letter-spacing:2px}
+.mode-tabs{display:flex;gap:10px;margin-bottom:20px}
+.mode-tab{flex:1;padding:10px;text-align:center;border-radius:12px;background:rgba(255,255,255,0.05);cursor:pointer;transition:all 0.3s;font-size:14px;border:1px solid transparent}
+.mode-tab.active{background:rgba(102,126,234,0.2);border-color:#667eea}
+.panel{display:none}.panel.active{display:block}
+textarea{width:100%;height:180px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;padding:15px;font-size:14px;resize:vertical;font-family:inherit;line-height:1.6}
+textarea::placeholder{color:rgba(255,255,255,0.2)}
+.hint{font-size:13px;color:rgba(255,255,255,0.3);margin:8px 0}
+.btn{padding:12px 30px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.3s}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 25px rgba(102,126,234,0.3)}
+.btn-secondary{background:rgba(255,255,255,0.1);color:#fff}
+.btn-secondary:hover:not(:disabled){background:rgba(255,255,255,0.2)}
+.btn-success{background:linear-gradient(135deg,#11998e,#38ef7d);color:#fff}
+.btn-warning{background:linear-gradient(135deg,#f2994a,#f2c94c);color:#fff}
+.btn-danger{background:linear-gradient(135deg,#eb3349,#f45c43);color:#fff}
+.word-count{font-size:13px;color:rgba(255,255,255,0.2);margin-top:10px}
+.progress-bar{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-bottom:20px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);transition:width 0.5s}
+.word-display{text-align:center;margin:20px 0}
+.word-display .word{font-size:48px;font-weight:700;letter-spacing:2px;min-height:60px;color:#667eea;visibility:hidden}
+.word-display .word.show{visibility:visible}
+.word-display .index{color:rgba(255,255,255,0.3);font-size:14px;margin-top:4px}
+.play-area{text-align:center;margin:15px 0}
+.btn-play{width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:22px;cursor:pointer;transition:all 0.3s;box-shadow:0 8px 25px rgba(102,126,234,0.3)}
+.btn-play:hover{transform:scale(1.1)}.btn-play:disabled{opacity:0.5;cursor:not-allowed}
+.info-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 20px;margin:15px 0;display:none}
+.info-box.active{display:block}
+.info-box .word-en{font-size:20px;font-weight:600;margin-bottom:6px}
+.info-box .word-cn{font-size:15px;color:rgba(255,255,255,0.6)}
+.options{display:flex;gap:10px;margin:15px 0}
+.options .btn{flex:1;padding:14px 8px;font-size:14px}
+.options .btn.selected{transform:scale(0.95);opacity:0.7}
+.examples{display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:18px;margin:15px 0}
+.examples.active{display:block}
+.ex-item{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.ex-item:last-child{border-bottom:none}
+.ex-en{font-size:15px;line-height:1.6;color:#fff}
+.ex-cn{font-size:13px;line-height:1.5;color:rgba(255,255,255,0.45);margin-top:3px}
+.nav-row{display:flex;gap:10px;margin-top:15px}
+.nav-row .btn{flex:1}
+.result-summary{text-align:center}
+.result-summary h2{font-size:24px;margin-bottom:15px}
+.result-stats{display:flex;justify-content:center;gap:30px;margin:15px 0}
+.stat-item{text-align:center}
+.stat-item .num{font-size:32px;font-weight:700}
+.stat-item .label{font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px}
+.stat-item .num.green{color:#38ef7d}.stat-item .num.yellow{color:#f2c94c}.stat-item .num.red{color:#f45c43}
+.result-detail{margin:15px 0;max-height:200px;overflow-y:auto}
+.result-word{display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;margin:4px 0;font-size:14px}
+.result-word.clear{background:rgba(56,239,125,0.1)}
+.result-word.vague{background:rgba(242,201,76,0.1)}
+.result-word.forgot{background:rgba(244,92,67,0.1)}
+@media(max-width:500px){.container{padding:20px}.options{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📖 猪猪然宝宝的听写软件</h1>
+<div class="subtitle">听发音 · 辨单词 · 学例句</div>
+<div class="mode-tabs">
+<div class="mode-tab active" onclick="switchMode('manage')">📝 单词管理</div>
+<div class="mode-tab" onclick="switchMode('dictate')">🎧 听写</div>
+</div>
+
+<div class="panel active" id="managePanel">
+<textarea id="wordInput" placeholder="每行一个英文单词：&#10;abandon&#10;ability&#10;abroad"></textarea>
+<div class="hint">💡 只输英文，自动补释义和例句（内置60词+在线检索）</div>
+<div style="display:flex;gap:10px;margin-top:10px">
+<button class="btn btn-primary" onclick="loadPreset()">📥 加载示例词库</button>
+<button class="btn btn-success" onclick="saveWords()">🔍 检索并保存</button>
+</div>
+<div class="word-count" id="wordCount">已加载 0 个单词</div>
+</div>
+
+<div class="panel" id="dictatePanel">
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="word-display">
+<div class="word" id="currentWord">🔊</div>
+<div class="index" id="wordIndex">第 0 / 0 个</div>
+</div>
+<div class="play-area">
+<button class="btn-play" id="playBtn" onclick="playWord()">🔊</button>
+<div style="font-size:12px;color:rgba(255,255,255,0.2);margin-top:6px;">点击播放 · 每词读两遍</div>
+</div>
+
+<div class="options">
+<button class="btn btn-success" id="optClear" onclick="selectAnswer('clear')">✅ 非常清楚</button>
+<button class="btn btn-warning" id="optVague" onclick="selectAnswer('vague')">🔶 模糊</button>
+<button class="btn btn-danger" id="optForget" onclick="selectAnswer('forget')">❌ 不记得</button>
+</div>
+
+<div class="info-box" id="meaningBox">
+<div class="word-en" id="meaningWord"></div>
+<div class="word-cn" id="meaningCn"></div>
+</div>
+
+<div class="examples" id="exampleArea"><div id="exampleContent"></div></div>
+
+<div class="nav-row">
+<button class="btn btn-secondary" id="prevBtn" onclick="prevWord()" disabled>⬅ 上一个</button>
+<button class="btn btn-primary" id="nextBtn" onclick="nextWord()">下一个 ➡</button>
+</div>
+<div class="nav-row" style="margin-top:6px">
+<button class="btn btn-secondary" onclick="switchMode('manage')">⬅ 返回</button>
+</div>
+</div>
+
+<div class="panel" id="resultPanel">
+<div class="result-summary">
+<h2>🎉 听写完成！</h2>
+<div class="result-stats">
+<div class="stat-item"><div class="num green" id="rClear">0</div><div class="label">清楚</div></div>
+<div class="stat-item"><div class="num yellow" id="rVague">0</div><div class="label">模糊</div></div>
+<div class="stat-item"><div class="num red" id="rForget">0</div><div class="label">忘记</div></div>
+</div>
+<div class="result-detail" id="resultDetail"></div>
+<div style="display:flex;gap:10px">
+<button class="btn btn-primary" onclick="restartWeak()">🔄 复习模糊/忘记的</button>
+<button class="btn btn-secondary" onclick="switchMode('manage')">📝 管理单词</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+// ═══ 内置词库（60词）：word → {cn:中文释义, en:英文释义, ex:[[英文例句,中文例句],...]}
+const BI = {
+"abandon":{cn:"v. 放弃；遗弃",en:"to give up or leave completely",ex:[["She had to abandon her studies due to financial difficulties.","由于经济困难，她不得不放弃学业。"],["The rescue team had to abandon the search.","救援队不得不放弃搜索。"]]},
+"ability":{cn:"n. 能力；才能",en:"the power or skill to do something",ex:[["The program aims to improve students' writing ability.","这个项目旨在提高学生的写作能力。"],["Her ability to solve complex problems impressed everyone.","她解决复杂问题的能力令人印象深刻。"]]},
+"abroad":{cn:"adv. 在国外",en:"in or to a foreign country",ex:[["More students choose to study abroad every year.","每年有更多学生选择出国留学。"],["Living abroad can broaden your perspective.","在国外生活可以拓宽你的视野。"]]},
+"absence":{cn:"n. 缺席；不在",en:"the state of being away",ex:[["His absence from class was noticed by the teacher.","老师注意到了他的缺课。"],["In the absence of evidence, we cannot conclude.","没有证据，我们无法下结论。"]]},
+"absolute":{cn:"adj. 绝对的；完全的",en:"total and complete",ex:[["I have absolute confidence in your ability.","我对你的能力有绝对信心。"],["There is no absolute standard for beauty.","美没有绝对的标准。"]]},
+"absorb":{cn:"v. 吸收；吸引",en:"to take in or soak up",ex:[["Plants absorb carbon dioxide from the atmosphere.","植物从大气中吸收二氧化碳。"],["The city absorbs new immigrants from all over.","这座城市吸收来自全国的新移民。"]]},
+"abstract":{cn:"adj. 抽象的",en:"existing as an idea rather than a physical thing",ex:[["The concept of freedom is abstract for children.","自由的概念对小孩来说很抽象。"],["This painting is too abstract for most viewers.","这幅画对大多数人来说太抽象了。"]]},
+"academic":{cn:"adj. 学术的",en:"relating to education and scholarship",ex:[["She had a brilliant academic career.","她有着辉煌的学术生涯。"],["Academic integrity is crucial for students.","学术诚信对学生至关重要。"]]},
+"access":{cn:"n. 使用权；通道",en:"the right or opportunity to use something",ex:[["Students have free access to library databases.","学生可免费访问图书馆数据库。"],["The building has wheelchair access.","该建筑有轮椅通道。"]]},
+"accompany":{cn:"v. 陪伴；伴随",en:"to go somewhere with someone",ex:[["The course book is accompanied by audio.","这本教材配有音频。"],["Children must be accompanied by an adult.","儿童须由成人陪同。"]]},
+"accomplish":{cn:"v. 完成；实现",en:"to achieve or complete successfully",ex:[["We can accomplish this task within a week.","我们可以一周内完成。"],["She accomplished her goal with honors.","她以优异成绩实现了目标。"]]},
+"accurate":{cn:"adj. 准确的",en:"correct and without mistakes",ex:[["Provide accurate information in your resume.","简历中提供准确信息。"],["The forecast was accurate.","天气预报很准确。"]]},
+"achieve":{cn:"v. 实现；达到",en:"to reach a goal through effort",ex:[["Work hard to achieve your goals.","努力实现你的目标。"],["The university achieved high rankings.","这所大学获得了高排名。"]]},
+"acknowledge":{cn:"v. 承认；感谢",en:"to accept or admit the truth of something",ex:[["She acknowledged the help of her colleagues.","她感谢了同事的帮助。"],["He acknowledged his mistake.","他承认了自己的错误。"]]},
+"acquire":{cn:"v. 获得；学到",en:"to gain possession or knowledge of something",ex:[["It takes time to acquire a new language.","掌握新语言需要时间。"],["She acquired valuable experience during the internship.","她获得了宝贵的经验。"]]},
+"adapt":{cn:"v. 适应；改编",en:"to adjust to new conditions",ex:[["Animals must adapt to environmental changes.","动物必须适应环境变化。"],["She adapted quickly to the new school.","她很快适应了新学校。"]]},
+"adequate":{cn:"adj. 足够的",en:"sufficient for a specific need",ex:[["The food supply is adequate for the journey.","食物足够整个旅程。"],["Her work is adequate but not outstanding.","她的工作够格但不突出。"]]},
+"adjust":{cn:"v. 调整；适应",en:"to change slightly to fit better",ex:[["It takes time to adjust to a new culture.","适应新文化需要时间。"],["You can adjust the volume with this button.","你可以用这个按钮调节音量。"]]},
+"admit":{cn:"v. 承认；准许进入",en:"to confess or allow entry",ex:[["He admitted making a mistake.","他承认犯了错误。"],["She was admitted to her dream university.","她被梦想的大学录取了。"]]},
+"adopt":{cn:"v. 采用；收养",en:"to take up or take into one's family",ex:[["The company adopted new technology.","公司采用了新技术。"],["They adopted a child from abroad.","他们收养了一个国外孩子。"]]},
+"advance":{cn:"v. 前进；推进",en:"to move forward or make progress",ex:[["Technology has advanced rapidly.","技术飞速发展。"],["The research advanced our understanding.","这项研究推进了我们的理解。"]]},
+"advantage":{cn:"n. 优势；有利条件",en:"a condition giving a greater chance of success",ex:[["Being bilingual is a great job market advantage.","双语能力是就业优势。"],["This location is near the subway, an advantage.","这个位置靠近地铁是优势。"]]},
+"advertise":{cn:"v. 做广告",en:"to promote products or services publicly",ex:[["Companies advertise on social media.","公司在社交媒体上做广告。"],["The job was advertised in the newspaper.","职位在报纸上做了广告。"]]},
+"affect":{cn:"v. 影响",en:"to have an influence on something",ex:[["Weather affects crop growth significantly.","天气对作物生长影响显著。"],["The new policy will affect all students.","新政策将影响所有学生。"]]},
+"afford":{cn:"v. 负担得起",en:"to have enough money or time for something",ex:[["Not everyone can afford university.","不是所有人都负担得起大学。"],["We can't afford to waste time.","我们不能再浪费时间了。"]]},
+"aggressive":{cn:"adj. 有进取心的；好斗的",en:"forceful or ready to attack",ex:[["The company needs an aggressive strategy.","公司需要积极的策略。"],["Some dogs become aggressive when provoked.","有些狗被激怒时会变得有攻击性。"]]},
+"allocate":{cn:"v. 分配；拨出",en:"to distribute for a specific purpose",ex:[["The government allocated funds for education.","政府为教育拨出了资金。"],["Each student was allocated a study space.","每个学生分配到学习空间。"]]},
+"alternative":{cn:"n. 替代方案",en:"another option or choice",ex:[["We need an alternative to fossil fuels.","我们需要化石燃料的替代品。"],["Is there a vegetarian alternative?","有素食选项吗？"]]},
+"amaze":{cn:"v. 使惊奇",en:"to cause great surprise or wonder",ex:[["Students' creativity never ceases to amaze me.","学生们的创造力总是让我惊叹。"],["I am amazed by her progress.","她的进步让我惊讶。"]]},
+"analyze":{cn:"v. 分析",en:"to examine something in detail",ex:[["Scientists analyzed the experimental data.","科学家分析了实验数据。"],["We need to analyze the problem first.","我们需要先分析问题。"]]},
+"announce":{cn:"v. 宣布",en:"to make something known publicly",ex:[["The university announced the exam schedule.","大学公布了考试安排。"],["The winner will be announced at the ceremony.","获胜者将在典礼上宣布。"]]},
+"annual":{cn:"adj. 每年的",en:"happening once a year",ex:[["The annual conference attracts global scholars.","年度会议吸引了全球学者。"],["The company publishes an annual report.","公司发布年度报告。"]]},
+"anxiety":{cn:"n. 焦虑",en:"a feeling of worry or nervousness",ex:[["Exam anxiety is common among students.","考试焦虑在学生中很常见。"],["She felt anxiety before the interview.","面试前她感到焦虑。"]]},
+"apparent":{cn:"adj. 明显的",en:"clearly visible or understood",ex:[["It was apparent she had prepared well.","很明显她做了充分准备。"],["The reason was not apparent.","原因不明显。"]]},
+"appeal":{cn:"v. 吸引；呼吁",en:"to be attractive or make a serious request",ex:[["Studying abroad appeals to many.","出国留学吸引了很多年轻人。"],["The charity appealed for donations.","慈善机构呼吁捐款。"]]},
+"application":{cn:"n. 申请；应用",en:"a formal request or practical use",ex:[["She submitted applications to three universities.","她向三所大学提交了申请。"],["The application of this theory is limited.","这个理论的应用有限。"]]},
+"appreciate":{cn:"v. 欣赏；感激",en:"to recognize the value of something",ex:[["I appreciate your help with the project.","我很感激你的帮助。"],["Her talent is widely appreciated.","她的才华广受赞赏。"]]},
+"approach":{cn:"n. 方法；途径",en:"a way of dealing with something",ex:[["This teaching approach is very effective.","这种教学方法很有效。"],["We need a new approach to this problem.","我们需要新方法解决这个问题。"]]},
+"appropriate":{cn:"adj. 适当的",en:"suitable for a particular situation",ex:[["Wear appropriate clothes for an interview.","面试要穿合适的衣服。"],["Her remarks were not appropriate.","她的话不合适。"]]},
+"approve":{cn:"v. 批准；赞成",en:"to officially agree to something",ex:[["The board approved the budget proposal.","董事会批准了预算方案。"],["My parents approve of my choice.","我父母赞成我的选择。"]]},
+"arise":{cn:"v. 出现；产生",en:"to come into existence or become noticeable",ex:[["New challenges arise as the project develops.","随着项目发展，新挑战出现了。"],["Contact us if problems arise.","如有问题请联系我们。"]]},
+"arrange":{cn:"v. 安排",en:"to organize or make plans for",ex:[["The university arranged accommodation.","大学安排了住宿。"],["Can we arrange a meeting for next week?","我们可以安排下周开会吗？"]]},
+"assess":{cn:"v. 评估",en:"to evaluate or estimate the value of",ex:[["Teachers assess student progress regularly.","老师定期评估学生进步。"],["The damage has not been assessed yet.","损失尚未评估。"]]},
+"assign":{cn:"v. 分配；指派",en:"to give someone a task or role",ex:[["Each student was assigned a research topic.","每个学生分配到了研究课题。"],["The task was assigned to the best team.","任务指派给了最好的团队。"]]},
+"assist":{cn:"v. 帮助",en:"to help or support someone",ex:[["Teaching assistants help professors with grading.","助教协助教授批改作业。"],["The program assists students in finding jobs.","该项目帮助学生找工作。"]]},
+"associate":{cn:"v. 关联",en:"to connect in the mind",ex:[["People associate Cambridge with excellence.","人们把剑桥与卓越联系在一起。"],["This disease is associated with smoking.","这种病与吸烟有关。"]]},
+"assume":{cn:"v. 假设；承担",en:"to suppose without proof",ex:[["I assume you have read the requirements.","我假设你已经读过了。"],["She assumed responsibility for the project.","她承担了项目责任。"]]},
+"atmosphere":{cn:"n. 气氛；大气",en:"the mood or feeling in a place",ex:[["The university has a vibrant atmosphere.","这所大学有活跃的氛围。"],["The atmosphere in the room was tense.","房间里的气氛很紧张。"]]},
+"attach":{cn:"v. 附上；连接",en:"to fasten or connect",ex:[["Attach your resume to the email.","请将简历附在邮件中。"],["A gym is attached to the dormitory.","宿舍楼附设健身房。"]]},
+"attempt":{cn:"v. 尝试",en:"to try to do something",ex:[["Students are encouraged to attempt challenging problems.","鼓励学生尝试有挑战性的问题。"],["The climbers attempted to reach the summit.","登山者试图登顶。"]]},
+"attend":{cn:"v. 参加",en:"to be present at an event",ex:[["All students must attend orientation.","所有学生必须参加迎新会。"],["She attends lectures regularly.","她按时参加讲座。"]]},
+"attitude":{cn:"n. 态度",en:"a way of thinking or feeling",ex:[["A positive attitude is essential for success.","积极的态度对成功至关重要。"],["She has a relaxed attitude toward exams.","她对考试持放松态度。"]]},
+"attract":{cn:"v. 吸引",en:"to draw interest or attention",ex:[["The scholarship attracts outstanding students.","奖学金吸引优秀学生。"],["The exhibition attracted thousands of visitors.","展览吸引了成千上万的参观者。"]]},
+"authority":{cn:"n. 权威；当局",en:"the power to give orders and make decisions",ex:[["The local authority is responsible for funding.","地方当局负责资助。"],["She is an authority on Greek history.","她是希腊历史的权威。"]]},
+"available":{cn:"adj. 可用的；有空的",en:"able to be used or obtained",ex:[["Many resources are available in the library.","图书馆有很多可用资源。"],["Are you available for a meeting tomorrow?","你明天有空开会吗？"]]},
+"aware":{cn:"adj. 意识到的",en:"knowing or realizing something",ex:[["Be aware of the plagiarism policy.","注意抄袭政策。"],["She was not aware of the schedule change.","她没意识到时间表的变更。"]]},
+"barrier":{cn:"n. 障碍",en:"something that blocks or hinders",ex:[["Language barriers challenge international students.","语言障碍对留学生很有挑战性。"],["Lack of funding is a major barrier to research.","缺乏资金是研究的主要障碍。"]]}
+};
+
+let words=[],results=[],cur=0,playing=false,answered=false;
+
+function init(){
+  const s=localStorage.getItem('dw');
+  if(s)try{words=JSON.parse(s)}catch(e){loadPreset()}
+  else loadPreset();
+  updUI();
+}
+function loadPreset(){
+  words=Object.entries(BI).map(([w,d])=>({word:w,cn:d.cn,en:d.en,ex:d.ex}));
+  save();updUI();
+}
+async function saveWords(){
+  const t=document.getElementById('wordInput').value.trim();
+  if(!t){toast('请输入单词');return;}
+  const raw=t.split('\n').map(l=>l.trim().toLowerCase()).filter(Boolean);
+  toast('🔍 正在检索 '+raw.length+' 个单词...');
+  const nw=[];
+  for(const w of raw){
+    if(BI[w]){nw.push({word:w,cn:BI[w].cn,en:BI[w].en,ex:BI[w].ex});continue;}
+    try{
+      const d=await fetchWDict(w);
+      if(d)nw.push(d);else{nw.push({word:w,cn:'(未找到释义)',en:'',ex:[]});}
+    }catch(e){nw.push({word:w,cn:'(检索失败)',en:'',ex:[]});}
+  }
+  words=nw;save();updUI();toast('✅ 已保存 '+words.length+' 个单词');
+}
+async function fetchWDict(word){
+  try{
+    const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
+    if(!r.ok)return null;
+    const j=await r.json();if(!j||!j[0])return null;
+    const d=j[0];
+    let en='',ex=[];
+    if(d.meanings)for(const m of d.meanings)if(m.definitions)for(const def of m.definitions){
+      if(!en)en=(m.partOfSpeech?m.partOfSpeech+'. ':'')+def.definition;
+      if(def.example&&ex.length<2)ex.push([def.example,'']);
+    }
+    if(!en)en='(no definition)';
+    // 翻译成中文（尝试多个翻译源）
+    let cn='';
+    // 源1: MyMemory (免费,支持跨域)
+    try{
+      const ac=new AbortController();setTimeout(()=>ac.abort(),3000);
+      const tr=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(en.substring(0,200))+'&langpair=en|zh-CN',{signal:ac.signal});
+      if(tr.ok){const tj=await tr.json();if(tj&&tj.responseData&&tj.responseData.translatedText)cn=tj.responseData.translatedText;}
+    }catch(e){}
+    // 源2: Google Translate (备选)
+    if(!cn){try{
+      const ac=new AbortController();setTimeout(()=>ac.abort(),3000);
+      const tr=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q='+encodeURIComponent(en.substring(0,200)),{signal:ac.signal});
+      if(tr.ok){const tj=await tr.json();if(tj&&tj[0])cn=tj[0].map(x=>x[0]).join('');}
+    }catch(e){}}
+    // 翻译例句
+    for(let i=0;i<ex.length;i++){
+      let cnex='';
+      try{
+        const ac=new AbortController();setTimeout(()=>ac.abort(),3000);
+        const tr=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(ex[i][0].substring(0,200))+'&langpair=en|zh-CN',{signal:ac.signal});
+        if(tr.ok){const tj=await tr.json();if(tj&&tj.responseData&&tj.responseData.translatedText)cnex=tj.responseData.translatedText;}
+      }catch(e){}
+      if(!cnex){try{
+        const ac=new AbortController();setTimeout(()=>ac.abort(),3000);
+        const tr=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q='+encodeURIComponent(ex[i][0].substring(0,200)),{signal:ac.signal});
+        if(tr.ok){const tj=await tr.json();if(tj&&tj[0])cnex=tj[0].map(x=>x[0]).join('');}
+      }catch(e){}}
+      ex[i][1]=cnex||'(暂无中文翻译)';
+    }
+    return{word:d.word,cn:cn||'(中文翻译获取失败) '+en,en,ex};
+  }catch(e){return null;}
+}
+function save(){localStorage.setItem('dw',JSON.stringify(words));}
+function updUI(){
+  document.getElementById('wordInput').value=words.map(w=>w.word).join('\n');
+  document.getElementById('wordCount').textContent='已加载 '+words.length+' 个单词';
+}
+function switchMode(mode){
+  document.querySelectorAll('.mode-tab').forEach((el,i)=>el.classList.toggle('active',(mode==='manage'&&i===0)||(mode==='dictate'&&i===1)));
+  ['managePanel','dictatePanel','resultPanel'].forEach(id=>document.getElementById(id).classList.toggle('active',id.replace('Panel','')===mode));
+  if(mode==='manage'){save();updUI();}
+  if(mode==='dictate'){
+    if(words.length===0){toast('请先添加单词');switchMode('manage');return;}
+    startD();
+  }
+}
+function startD(){
+  cur=0;results=words.map(w=>({word:w.word,type:null}));answered=false;
+  document.getElementById('resultPanel').classList.remove('active');
+  document.getElementById('dictatePanel').classList.add('active');showWord();
+}
+function showWord(){
+  const t=words.length;
+  if(cur>=t){showR();return;}
+  const w=words[cur];
+  // 听写时隐藏单词，只显示图标
+  document.getElementById('currentWord').textContent='🔊';
+  document.getElementById('currentWord').classList.remove('show');
+  document.getElementById('wordIndex').textContent='第 '+(cur+1)+' / '+t+' 个';
+  document.getElementById('progressFill').style.width=((cur+1)/t*100)+'%';
+  document.getElementById('meaningBox').classList.remove('active');
+  document.getElementById('exampleArea').classList.remove('active');
+  answered=!!results[cur].type;
+  ['optClear','optVague','optForget'].forEach(id=>{document.getElementById(id).classList.remove('selected');document.getElementById(id).disabled=answered;});
+  document.getElementById('prevBtn').disabled=(cur===0);
+  document.getElementById('nextBtn').textContent=(cur===t-1)?'📊 查看结果':'下一个 ➡';
+  if(answered){const ty=results[cur].type;hlOpt(ty);showContent(ty);}
+  setTimeout(()=>playWord(),300);
+}
+function hlOpt(t){
+  document.getElementById('optClear').classList.toggle('selected',t==='clear');
+  document.getElementById('optVague').classList.toggle('selected',t==='vague');
+  document.getElementById('optForget').classList.toggle('selected',t==='forget');
+}
+function playWord(){if(playing)return;const w=words[cur].word;speak(w,()=>{setTimeout(()=>speak(w),800);});}
+function speak(text,cb){
+  if(!window.speechSynthesis){if(cb)cb();return;}
+  playing=true;document.getElementById('playBtn').disabled=true;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=0.8;
+  const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('en')&&v.name.includes('US'))||speechSynthesis.getVoices().find(v=>v.lang.startsWith('en'));
+  if(v)u.voice=v;
+  u.onend=()=>{playing=false;document.getElementById('playBtn').disabled=false;if(cb)cb();};
+  u.onerror=()=>{playing=false;document.getElementById('playBtn').disabled=false;if(cb)cb();};
+  speechSynthesis.speak(u);
+}
+function selectAnswer(type){
+  if(answered)return;
+  results[cur].type=type;answered=true;hlOpt(type);
+  ['optClear','optVague','optForget'].forEach(id=>document.getElementById(id).disabled=true);
+  showContent(type);
+}
+function showContent(type){
+  const w=words[cur];
+  const mb=document.getElementById('meaningBox');
+  const ea=document.getElementById('exampleArea');
+  const ec=document.getElementById('exampleContent');
+
+  // 显示单词拼写
+  document.getElementById('currentWord').textContent=w.word;
+  document.getElementById('currentWord').classList.add('show');
+
+  if(type==='clear'){
+    // 非常清楚：显示中文释义 + 例句
+    document.getElementById('meaningWord').textContent=w.word;
+    document.getElementById('meaningCn').textContent='📖 '+w.cn;
+    mb.classList.add('active');
+    let html='';
+    if(w.ex&&w.ex[0])html+='<div class="ex-item"><div class="ex-en">💬 '+w.ex[0][0]+'</div>'+(w.ex[0][1]?'<div class="ex-cn">📖 '+w.ex[0][1]+'</div>':'')+'</div>';
+    ec.innerHTML=html;ea.classList.add('active');
+  }else if(type==='vague'){
+    // 模糊：显示英文释义（帮回忆） + 例句
+    document.getElementById('meaningWord').textContent=w.word;
+    document.getElementById('meaningCn').textContent='💡 提示：'+w.en;
+    mb.classList.add('active');
+    let html='';
+    if(w.ex&&w.ex[0])html+='<div class="ex-item"><div class="ex-en">💬 '+w.ex[0][0]+'</div>'+(w.ex[0][1]?'<div class="ex-cn">📖 '+w.ex[0][1]+'</div>':'')+'</div>';
+    if(w.ex&&w.ex[1])html+='<div class="ex-item"><div class="ex-en">💬 '+w.ex[1][0]+'</div>'+(w.ex[1][1]?'<div class="ex-cn">📖 '+w.ex[1][1]+'</div>':'')+'</div>';
+    ec.innerHTML=html;ea.classList.add('active');
+  }else{
+    // 不记得：同非常清楚，显示中文释义+例句
+    document.getElementById('meaningWord').textContent=w.word;
+    document.getElementById('meaningCn').textContent='📖 '+w.cn;
+    mb.classList.add('active');
+    let html='';
+    if(w.ex&&w.ex[0])html+='<div class="ex-item"><div class="ex-en">💬 '+w.ex[0][0]+'</div>'+(w.ex[0][1]?'<div class="ex-cn">📖 '+w.ex[0][1]+'</div>':'')+'</div>';
+    ec.innerHTML=html;ea.classList.add('active');
+  }
+}
+function nextWord(){if(cur<words.length-1){cur++;showWord();}else showR();}
+function prevWord(){if(cur>0){cur--;showWord();}}
+function showR(){
+  document.getElementById('dictatePanel').classList.remove('active');
+  document.getElementById('resultPanel').classList.add('active');
+  const c=results.filter(r=>r.type==='clear').length;
+  const v=results.filter(r=>r.type==='vague').length;
+  const f=results.filter(r=>r.type==='forget').length;
+  document.getElementById('rClear').textContent=c;
+  document.getElementById('rVague').textContent=v;
+  document.getElementById('rForget').textContent=f;
+  const map={clear:'✅ 清楚',vague:'🔶 模糊',forget:'❌ 忘记'},cls={clear:'clear',vague:'vague',forget:'forgot'};
+  const wo=Object.fromEntries(words.map(w=>[w.word,w]));
+  document.getElementById('resultDetail').innerHTML=results.map(r=>{
+    const w=wo[r.word];
+    return '<div class="result-word '+cls[r.type]+'"><span><strong>'+r.word+'</strong> '+(w?w.cn:'')+'</span><span>'+map[r.type]+'</span></div>';
+  }).join('');
+}
+function restartWeak(){
+  const w=words.filter((w,i)=>results[i]&&results[i].type!=='clear');
+  if(w.length===0){toast('🎉 全部掌握！');return;}
+  words=w;toast('🔄 复习 '+words.length+' 个单词');startD();
+}
+function toast(msg){
+  const d=document.createElement('div');
+  d.textContent=msg;
+  d.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:999;';
+  document.body.appendChild(d);
+  setTimeout(()=>{d.style.transition='0.3s';d.style.opacity='0';setTimeout(()=>d.remove(),300);},2000);
+}
+if(window.speechSynthesis){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
+init();
+</script>
+</body>
+</html>
